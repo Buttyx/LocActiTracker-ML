@@ -59,12 +59,9 @@ public class RecognitionService {
         }
 
         // Start the continuous recognition process
-        // recogniseLatestTraces(context);
+        recogniseLatestTraces(context);
 
-        recogniseActivityForUser(context, false, false, "xavier", 1485517550520l, 1485517869864l);
-        recogniseActivityForUser(context, false, true, "xavier", 1485517550520l, 1485517869864l);
-        recogniseActivityForUser(context, true, true, "xavier", 1485517550520l, 1485517869864l);
-        recogniseActivityForUser(context, true, false, "xavier", 1485517550520l, 1485517869864l);
+
     }
 
     /**
@@ -81,12 +78,14 @@ public class RecognitionService {
         // Get the list of users
         List<String> users = QueriesUtils.fetchUsers(cassandraRowsRDD);
 
+        System.out.println("=== Number of users ====> " + users.size());
+
 
         // For each user, recognise the activity with the four variation of inference model
         for (String user:users) {
             recogniseActivityForUser(javaSparkContext, false, false, user, startTime-TEN_SECONDS, startTime);
             recogniseActivityForUser(javaSparkContext, false, true, user, startTime-TEN_SECONDS, startTime);
-            recogniseActivityForUser(javaSparkContext, true, true, user, startTime-TEN_SECONDS, startTime);
+            recogniseActivityForUser(javaSparkContext, true, false, user, startTime-TEN_SECONDS, startTime);
             recogniseActivityForUser(javaSparkContext, true, true, user, startTime-TEN_SECONDS, startTime);
         }
     }
@@ -138,9 +137,12 @@ public class RecognitionService {
 
         // retrieve latestAccelerations from Cassandra and create an CassandraRDD
         CassandraJavaRDD<CassandraRow> cassandraRowsRDD = javaFunctions(sc).cassandraTable(CASSANDRA_KEYSPACE, CASSANDRA_RECOGNITON_TABLE);
-        JavaRDD<Trace> latestTraces = QueriesUtils.fetchTracesFromTo(cassandraRowsRDD, user, dominantHand, start, end);
+        //JavaRDD<Trace> latestTraces = QueriesUtils.fetchTracesFromTo(cassandraRowsRDD, user, dominantHand, start, end);
+        JavaRDD<Trace> latestTraces = QueriesUtils.fetchLatestTraces(cassandraRowsRDD, user, dominantHand, 2500l);
 
         System.out.println("=== Number of elements ====> " + latestTraces.collect().size());
+        System.out.println("=== Start time ====> " + start);
+        System.out.println("=== End time ====> " + end);
 
         JavaPairRDD<Integer, Iterable<Trace>> regions;
         if (locationAware) {

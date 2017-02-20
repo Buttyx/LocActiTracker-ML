@@ -59,6 +59,34 @@ public class QueriesUtils {
                 .map(row -> convertToTrace(row));
     }
 
+    /**
+     * Collect all the traces for the given user between the period defined by the start and end time
+     * @param cassandraRowsRDD
+     * @param user
+     * @param dominantHand
+     * @param limit
+     * @return the list of traces
+     */
+    public static JavaRDD<Trace> fetchLatestTraces(CassandraJavaRDD<CassandraRow> cassandraRowsRDD,
+                                                   String user,
+                                                   boolean dominantHand,
+                                                   long limit){
+
+        return  cassandraRowsRDD
+
+                .select(FIELD_TIMESTAMP,
+                        FIELD_DOMINANTHAND,
+                        FIELD_USER,
+                        FIELD_ACC_X, FIELD_ACC_Y, FIELD_ACC_Z,
+                        FIELD_LATITUDE, FIELD_LONGITUDE)
+                .where(FIELD_USER+"=? AND " +
+                        FIELD_DOMINANTHAND + "=?", user, dominantHand)
+                .withDescOrder()
+                .limit(limit)
+                .repartition(1)
+                .map(row -> convertToTrace(row));
+    }
+
 
     /**
      * Fetch all the users from cassandra
